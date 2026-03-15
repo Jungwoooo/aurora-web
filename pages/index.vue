@@ -1,38 +1,28 @@
-<script setup lang="ts">
-// 환경 변수(주소) 가져오기
-const config = useRuntimeConfig()
-
-// 대못(하드코딩) 뽑아내고 baseURL을 사용합니다!
-const { data, pending, error, refresh } = await useFetch('/test', {
-  baseURL: config.public.apiUrl, // 로컬에선 localhost:8080, 배포하면 AWS IP!
-  method: 'GET'
-})
-
-const fetchData = () => {
-  refresh()
-}
-</script>
-
 <template>
-  <div style="padding: 20px; font-family: sans-serif;">
-    <h1>✨ 오로라 폴댄스 메인 페이지 (로컬 연동 테스트)</h1>
-    <hr />
-
-    <div v-if="pending"><p>로딩 중...</p></div>
-    
-    <div v-else-if="error">
-      <p style="color: red;">❌ 에러 발생!</p>
-      <pre>{{ error }}</pre>
+  <div class="animate-fade-in text-center py-6">
+    <div class="bg-purple-100 rounded-2xl p-8 mb-8 shadow-sm">
+      <h1 class="text-3xl font-extrabold text-gray-900 mb-3 leading-tight">
+        당신의 가장 <br/>
+        <span class="text-purple-600">아름다운 순간</span>
+      </h1>
+      <p class="text-gray-600 font-medium">오로라 폴댄스가 기록합니다.</p>
     </div>
 
-    <div v-else>
-      <p style="color: blue; font-size: 1.5rem;">
-        ✅ 로컬 백엔드 응답: <strong>{{ data }}</strong>
-      </p>
+    <div class="grid grid-cols-2 gap-3 mb-10">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">✨</div>
+        <h3 class="font-bold text-gray-800 text-sm mb-1">프리미엄 시설</h3>
+        <p class="text-xs text-gray-500">최고급 폴과 넓은 연습실</p>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">🤝</div>
+        <h3 class="font-bold text-gray-800 text-sm mb-1">밀착 코칭</h3>
+        <p class="text-xs text-gray-500">소수 정예 맞춤형 수업</p>
+      </div>
     </div>
 
-    <button @click="fetchData" style="padding: 10px 20px; cursor: pointer;">
-      다시 불러오기
-    </button>
+    <NuxtLink to="/reservation" class="block w-full bg-gray-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-black transition">
+      이번 주 수업 예약하러 가기 &rarr;
+    </NuxtLink>
   </div>
 </template>

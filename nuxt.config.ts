@@ -1,8 +1,11 @@
 export default defineNuxtConfig({
+  compatibilityDate: '2026-03-14',
+  modules: [
+    '@nuxtjs/tailwindcss' // 💡 이 줄을 추가합니다!
+  ],
   runtimeConfig: {
     public: {
-      // 💡 process.env를 지우고, 기본값(로컬 주소)을 그냥 적어줍니다!
-      apiUrl: 'http://localhost:8080' 
+      apiUrl: 'http://localhost:8080' // 개발할 땐 다시 localhost로!
     }
   }
 })
