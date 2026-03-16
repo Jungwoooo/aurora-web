@@ -5,7 +5,7 @@ import { ref } from 'vue'
 const teachersData = [
   {
     id: 1,
-    name: "오로라",
+    name: "장효경",
     role: "원장 / 메인 강사",
     img: "https://picsum.photos/300/300?random=1",
     career: [
@@ -15,12 +15,11 @@ const teachersData = [
   },
   {
     id: 2,
-    name: "신가연",
-    role: "초중급 스핀 코치",
+    name: "박정우",
+    role: "초중급 강사",
     img: "https://picsum.photos/300/300?random=2",
     career: [
-      { category: "이력", items: ["전) 뷰티폴 아카데미 전임강사", "현) 오로라 폴댄스 수석 강사"] },
-      { category: "공연", items: ["2023 폴 파티 게스트 쇼케이스"] }
+      { category: "이력", items: ["전) 장효경 남자친구", "현) 장효경 남편"] },
     ]
   },
 ]

@@ -1,19 +1,43 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMemberStore } from '@/stores/member' // 창고 가져오기
+
+const router = useRouter()
+const memberStore = useMemberStore()
 
 const email = ref('')
 const password = ref('')
 
-// 임시 로그인 버튼 동작
-const handleLogin = () => {
-  alert(`입력한 이메일: ${email.value}\n나중에 백엔드랑 연결할게요!`)
+const handleLogin = async () => {
+  try {
+    // 1. 창고 관리자에게 "이메일/비번 줄 테니까 로그인 좀 해와!" 시키기
+    const result = await memberStore.login({
+      email: email.value,
+      password: password.value
+    })
+
+    // 2. 성공하면 환영 인사!
+    alert(`${result.name}님 환영합니다!`)
+
+    // 3. ⭐️ 하이라이트: 권한(Role)에 따른 자동문 이동!
+    if (result.role === 'admin') {
+      router.push('/admin') // 원장님은 까만 지붕 관리자실로 모십니다!
+    } else {
+      router.push('/') // 수강생은 하얀 지붕 메인 홀로 보냅니다!
+    }
+
+  } catch (error: any) {
+    // 비밀번호 틀리거나 없는 이메일일 때
+    alert('앗! 이메일이나 비밀번호를 다시 확인해 주세요.')
+  }
 }
 </script>
 
 <template>
   <div class="flex flex-col justify-center min-h-[70vh] px-4">
     <div class="text-center mb-10">
-      <h1 class="text-3xl font-extrabold text-purple-600 mb-2">✨ 오로라 폴댄스</h1>
+      <h1 class="text-3xl font-extrabold text-purple-600 mb-2">오로라 폴댄스</h1>
       <p class="text-gray-500 font-medium">아름다운 비행을 시작해 볼까요?</p>
     </div>
 
