@@ -1,5 +1,10 @@
 <template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <div>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+
+    <GlobalModal />
+    <GlobalToast />
+  </div>
 </template>

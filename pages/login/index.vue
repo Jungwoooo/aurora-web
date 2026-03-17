@@ -5,6 +5,7 @@ import { useMemberStore } from '@/stores/member' // 창고 가져오기
 
 const router = useRouter()
 const memberStore = useMemberStore()
+const toastStore = useToastStore()
 
 const email = ref('')
 const password = ref('')
@@ -18,7 +19,7 @@ const handleLogin = async () => {
     })
 
     // 2. 성공하면 환영 인사!
-    alert(`${result.name}님 환영합니다!`)
+    toastStore.show(`${result.name}님 환영합니다!`)
 
     // 3. ⭐️ 하이라이트: 권한(Role)에 따른 자동문 이동!
     if (result.role === 'admin') {
@@ -29,8 +30,22 @@ const handleLogin = async () => {
 
   } catch (error: any) {
     // 비밀번호 틀리거나 없는 이메일일 때
-    alert('앗! 이메일이나 비밀번호를 다시 확인해 주세요.')
+    toastStore.show('앗! 이메일이나 비밀번호를 다시 확인해 주세요.')
   }
+}
+
+
+
+
+// 🚨 아까 메모장에 복사해둔 원장님의 REST API 키를 여기에 쏙! 넣어주세요!
+const KAKAO_REST_API_KEY = '5a730b1cdcf4bf10888cee090b81f9af' 
+const REDIRECT_URI = 'http://localhost:3000/auth/kakao/callback'
+
+// 카카오 버튼을 눌렀을 때 실행되는 함수!
+const loginWithKakao = () => {
+  // 카카오 로그인 전용 창으로 슝~ 날려보냅니다.
+  const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`
+  window.location.href = kakaoAuthUrl 
 }
 </script>
 
@@ -69,6 +84,26 @@ const handleLogin = async () => {
         로그인
       </button>
     </form>
+
+    <div class="mt-8 mb-6 relative">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-200"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-3 bg-white text-gray-400 font-bold">또는</span>
+        </div>
+      </div>
+
+      <button 
+        @click="loginWithKakao" 
+        type="button" 
+        class="w-full flex justify-center items-center py-3.5 border border-transparent rounded-xl shadow-sm text-base font-extrabold text-black bg-[#FEE500] hover:bg-[#FDD800] active:scale-[0.98] transition"
+      >
+        <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3C6.477 3 2 6.358 2 10.5c0 2.656 1.764 4.985 4.417 6.136-.217.784-1.396 4.966-1.428 5.127-.043.218.156.241.284.156.101-.067 4.922-3.328 6.852-4.634.288.026.582.04.875.04 5.523 0 10-3.358 10-7.5S17.523 3 12 3z"/>
+        </svg>
+        카카오로 1초 만에 시작하기
+      </button>
 
     <div class="mt-8 text-center text-sm text-gray-500">
       아직 오로라 회원이 아니신가요? 

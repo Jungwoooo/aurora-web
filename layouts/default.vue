@@ -28,6 +28,7 @@ const closeMenu = () => { isMenuOpen.value = false }
         <NuxtLink to="/" @click="closeMenu">홈</NuxtLink>
         <NuxtLink to="/teacher" @click="closeMenu">강사 소개</NuxtLink>
         <NuxtLink to="/reservation" @click="closeMenu">수강 예약</NuxtLink>
+        <NuxtLink to="/mypage" @click="closeMenu">마이 페이지</NuxtLink>
 
         <hr class="border-gray-200" />
 
@@ -35,7 +36,7 @@ const closeMenu = () => { isMenuOpen.value = false }
 
         <div v-else class="flex flex-col space-y-6">
           <NuxtLink v-if="memberStore.userInfo?.role === 'admin'" to="/admin" @click="closeMenu" class="text-blue-600 bg-blue-50 px-4 py-2 rounded-lg inline-block text-center">
-            관리자 모드 가기
+            관리자
           </NuxtLink>
           
           <button @click="() => { memberStore.logout(); closeMenu(); $router.push('/') }" class="text-red-500 text-left">

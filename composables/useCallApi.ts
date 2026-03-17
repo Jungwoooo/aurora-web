@@ -1,7 +1,7 @@
 // composables/useCallApi.ts
 export const useCallApi = async (path: string, options: any = {}) => {
   const config = useRuntimeConfig();
-  const baseURL = config.public.apiBase;
+  const baseURL = config.public.apiUrl;
   
   // 🎟️ 1. 무전 치기 전에 쿠키 주머니에서 팔찌(토큰) 꺼내기
   const tokenCookie = useCookie('accessToken')

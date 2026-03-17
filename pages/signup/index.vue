@@ -21,11 +21,11 @@ const handleSignup = async () => {
       phone: phone.value
     })
 
-    alert('회원가입 성공! 로그인해주세요.')
+    toastStore.show('회원가입 성공! 로그인해주세요.')
     router.push('/login')
 
   } catch (error: any) {
-    alert('앗! 이미 가입된 이메일이거나 오류가 발생했습니다.')
+    toastStore.show('앗! 이미 가입된 이메일이거나 오류가 발생했습니다.')
   }
 }
 </script>
