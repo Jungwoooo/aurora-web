@@ -5,6 +5,7 @@ import { useMemberStore } from '@/stores/member' // 💡 창고 관리자 호출
 
 const router = useRouter()
 const memberStore = useMemberStore() // 창고 쓰겠다고 선언
+const toastStore = useToastStore()
 
 const email = ref('')
 const password = ref('')

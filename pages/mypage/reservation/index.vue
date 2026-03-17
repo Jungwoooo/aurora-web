@@ -111,7 +111,7 @@ onMounted(() => {
 
         <div v-if="myReservations.length === 0" class="text-center py-10">
           <p class="text-gray-400 font-bold text-lg mb-2">예약된 수업이 없습니다.</p>
-          <button @click="router.push('/schedule')" class="mt-2 px-6 py-2 bg-purple-600 text-white font-bold rounded-full hover:bg-purple-700 transition">
+          <button @click="router.push('/reservation')" class="mt-2 px-6 py-2 bg-purple-600 text-white font-bold rounded-full hover:bg-purple-700 transition">
             수업 예약하러 가기
           </button>
         </div>
