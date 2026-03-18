@@ -78,7 +78,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto p-4 md:p-6">
+  <div class="max-w-5xl mx-auto p-4 md:p-6">
     <div class="mb-6">
       <h1 class="text-2xl font-extrabold text-gray-900">내 예약 내역</h1>
       <p class="text-gray-500 mt-1">예약하신 수업 목록입니다.</p>

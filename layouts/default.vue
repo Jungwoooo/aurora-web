@@ -9,7 +9,7 @@ const closeMenu = () => { isMenuOpen.value = false }
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <header class="bg-white shadow-sm sticky top-0 z-40">
-      <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
         <NuxtLink to="/" class="text-xl font-extrabold text-purple-600" @click="closeMenu">오로라 폴 스튜디오</NuxtLink>
         <button @click="isMenuOpen = !isMenuOpen" class="text-gray-600">
           <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,6 +46,6 @@ const closeMenu = () => { isMenuOpen.value = false }
       </nav>
     </div>
 
-    <main class="flex-grow max-w-md w-full mx-auto p-4"><slot /></main>
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4"><slot /></main>
   </div>
 </template>

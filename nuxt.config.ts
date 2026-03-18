@@ -6,7 +6,8 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     public: {
-      apiUrl: 'http://13.125.61.216:8080' // 개발할 땐 다시 localhost로!
+      apiUrl: 'http://localhost:8080' // 개발할 땐 다시 localhost로!
+      // apiUrl: 'http://13.125.61.216:8080' // 개발할 땐 다시 localhost로!
     }
   }
 })

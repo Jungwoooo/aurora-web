@@ -144,7 +144,7 @@ const goBack = () => router.push('/admin/member')
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto p-4 md:p-6">
+  <div class="max-w-5xl mx-auto p-4 md:p-6">
     <div class="flex items-center mb-6 space-x-4">
       <button @click="goBack" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
         <span class="text-xl font-bold text-gray-600">←</span>

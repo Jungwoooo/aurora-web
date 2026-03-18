@@ -47,7 +47,7 @@ const handleGrant = async () => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl shadow-sm p-6 mt-4 border border-gray-200 max-w-2xl mx-auto">
+  <div class="bg-white rounded-2xl shadow-sm p-6 mt-4 border border-gray-200 max-w-5xl mx-auto">
     <h2 class="text-xl font-extrabold text-gray-800 mb-2">수강권 발급/연장</h2>
     <p class="text-gray-500 text-sm mb-6">회원에게 수강권을 지급하거나 기존 수강권의 횟수/기간을 연장합니다.</p>
     

@@ -3,9 +3,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMemberStore } from '@/stores/member' // 창고 가져오기
 
-const config = useRuntimeConfig();
-const baseURL = config.public.apiUrl;
-
 const router = useRouter()
 const memberStore = useMemberStore()
 const toastStore = useToastStore()
@@ -42,10 +39,10 @@ const handleLogin = async () => {
 
 // 🚨 아까 메모장에 복사해둔 원장님의 REST API 키를 여기에 쏙! 넣어주세요!
 const KAKAO_REST_API_KEY = '5a730b1cdcf4bf10888cee090b81f9af' 
-const REDIRECT_URI = `${baseURL}/auth/kakao/callback`
 
 // 카카오 버튼을 눌렀을 때 실행되는 함수!
 const loginWithKakao = () => {
+  const REDIRECT_URI = `${window.location.origin}/auth/kakao/callback`
   // 카카오 로그인 전용 창으로 슝~ 날려보냅니다.
   const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`
   window.location.href = kakaoAuthUrl 

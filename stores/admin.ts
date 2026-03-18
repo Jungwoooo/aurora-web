@@ -64,6 +64,23 @@ export const useAdminStore = defineStore('admin', () => {
     return response
   }
 
+  // ✏️ 수업 수정
+  const updateLesson = async (id: number, payload: any) => {
+    const response = await useCallApi(`/api/admin/lesson/${id}`, { 
+      method: 'PUT',
+      body: payload
+    })
+    return response
+  }
+
+  // 🗑️ 수업 삭제 (Soft Delete)
+  const deleteLesson = async (id: number) => {
+    const response = await useCallApi(`/api/admin/lesson/${id}`, { 
+      method: 'DELETE',
+    })
+    return response
+  }
+
   // 💡 밖에서 쓸 수 있게 전부 return 해줍니다!
   return {
     memberList,
@@ -73,6 +90,8 @@ export const useAdminStore = defineStore('admin', () => {
     createLesson,
     fetchMemberReservations,
     forceCancelReservation,
-    fetchDailySchedule
+    fetchDailySchedule,
+    updateLesson,
+    deleteLesson,
   }
 })
