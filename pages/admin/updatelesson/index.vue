@@ -4,6 +4,8 @@ import { useLessonStore } from '@/stores/lesson'
 import { useAdminStore } from '@/stores/admin'
 import { useToastStore } from '@/stores/toast' 
 
+definePageMeta({ layout: 'admin' })
+
 const lessonStore = useLessonStore()
 const adminStore = useAdminStore()
 const toastStore = useToastStore()
