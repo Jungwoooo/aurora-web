@@ -26,6 +26,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
   }
 
   const isLoggedIn = memberStore.isAuthenticated
+  const isTeacher = memberStore.userInfo?.role === 'teacher'
   const isAdmin = memberStore.userInfo?.role === 'admin'
 
   // 🔒 2. 로그인한 사람은 로그인/회원가입 화면 접근 금지! (메인으로 튕겨내기)
@@ -37,12 +38,24 @@ export default defineNuxtRouteMiddleware((to, from) => {
   if (to.path.startsWith('/admin')) {
     if (!isLoggedIn) return navigateTo('/login')
     
-    if (!isAdmin) {
+    if (!isAdmin && !isTeacher) {
       // 💡 서버(SSR) 환경에서는 alert가 없으므로 브라우저일 때만 띄웁니다.
-      if (import.meta.client) toastStore.show('원장님만 들어갈 수 있는 비밀의 방입니다!')
+      toastStore.show('접근 권한이 없습니다.')
       return navigateTo('/')
     }
   }
+
+  if (to.name === 'admin-member-id') {
+    if (!isAdmin) {
+      toastStore.show('접근 권한이 없습니다.')
+      if (isTeacher) {
+        return navigateTo('/admin')
+      } else {
+        return navigateTo('/')
+      }
+    }
+  }
+
 
   // 🗓️ 4. 로그인해야 쓸 수 있는 기능들 보호 (예: 예약 화면)
   const protectedRoutes = ['/reservation'] // 나중에 마이페이지 등 추가

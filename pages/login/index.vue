@@ -22,7 +22,7 @@ const handleLogin = async () => {
     toastStore.show(`${result.name}님 환영합니다!`)
 
     // 3. ⭐️ 하이라이트: 권한(Role)에 따른 자동문 이동!
-    if (result.role === 'admin') {
+    if (result.role === 'admin' || result.role === 'teacher') {
       router.push('/admin') // 원장님은 까만 지붕 관리자실로 모십니다!
     } else {
       router.push('/') // 수강생은 하얀 지붕 메인 홀로 보냅니다!

@@ -27,7 +27,7 @@ const memberStore = useMemberStore()
         <NuxtLink to="/admin/member" class="px-4 py-3 hover:text-white hover:bg-gray-700 transition">회원 관리</NuxtLink>
         <NuxtLink to="/admin/lesson" class="px-4 py-3 hover:text-white hover:bg-gray-700 transition">수업 등록</NuxtLink>
         <NuxtLink to="/admin/updatelesson" class="px-4 py-3 hover:text-white hover:bg-gray-700 transition">수업 수정</NuxtLink>
-        <NuxtLink to="/admin/voucher" class="px-4 py-3 hover:text-white hover:bg-gray-700 transition">수강권 관리</NuxtLink>
+        <!-- <NuxtLink to="/admin/voucher" class="px-4 py-3 hover:text-white hover:bg-gray-700 transition">수강권 관리</NuxtLink> -->
       </div>
     </nav>
 

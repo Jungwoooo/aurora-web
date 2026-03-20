@@ -35,7 +35,7 @@ const closeMenu = () => { isMenuOpen.value = false }
         <NuxtLink v-if="!memberStore.isAuthenticated" to="/login" @click="closeMenu" class="text-purple-600">로그인</NuxtLink>
 
         <div v-else class="flex flex-col space-y-6">
-          <NuxtLink v-if="memberStore.userInfo?.role === 'admin'" to="/admin" @click="closeMenu" class="text-blue-600 bg-blue-50 px-4 py-2 rounded-lg inline-block text-center">
+          <NuxtLink v-if="memberStore.userInfo?.role === 'admin' || memberStore.userInfo?.role === 'teacher'" to="/admin" @click="closeMenu" class="text-blue-600 bg-blue-50 px-4 py-2 rounded-lg inline-block text-center">
             관리자
           </NuxtLink>
           

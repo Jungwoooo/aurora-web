@@ -9,6 +9,7 @@ definePageMeta({ layout: 'admin' })
 const lessonStore = useLessonStore()
 const adminStore = useAdminStore()
 const toastStore = useToastStore()
+const memberStore = useMemberStore()
 
 const currentDate = ref(new Date()) 
 const selectedDate = ref(currentDate.value.getDate())
@@ -57,19 +58,27 @@ const fetchData = async () => {
 watch([selectedDate, currentMonth], fetchData, { immediate: true })
 
 const handleEdit = (cls: any) => {
-  selectedLesson.value = cls
-  isEditModalOpen.value = true
+  if (memberStore.userInfo?.role === 'admin') {
+    selectedLesson.value = cls
+    isEditModalOpen.value = true
+  } else {
+    toastStore.show('접근 권한이 없습니다.')
+  }
 }
 
 const handleDelete = async (lessonId: number) => {
-  if (confirm('정말로 이 수업을 삭제하시겠습니까?\n이미 예약한 회원이 있다면 취소 처리됩니다.')) {
-    try {
-      await adminStore.deleteLesson(lessonId) 
-      toastStore.show('수업이 삭제되었습니다.')
-      await fetchData() 
-    } catch (error: any) {
-      toastStore.show('삭제 실패 \n이유: ' + (error.response?._data || '서버 오류'))
+  if (memberStore.userInfo?.role === 'admin') {
+    if (confirm('정말로 이 수업을 삭제하시겠습니까?\n이미 예약한 회원이 있다면 취소 처리됩니다.')) {
+      try {
+        await adminStore.deleteLesson(lessonId) 
+        toastStore.show('수업이 삭제되었습니다.')
+        await fetchData() 
+      } catch (error: any) {
+        toastStore.show('삭제 실패 \n이유: ' + (error.response?._data || '서버 오류'))
+      }
     }
+  } else {
+    toastStore.show('접근 권한이 없습니다.')
   }
 }
 </script>
