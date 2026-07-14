@@ -219,7 +219,7 @@ const pasteWeeks = async (targetIndex: number) => {
       toastStore.show('수업 대량 등록에 실패했습니다.')
     }
   } else {
-    toastStore.show('adminStore에 bulkCreateLessons 함수를 먼저 추가해주세요!')
+    toastStore.show('adminStore에 copyCreateLessons 함수를 먼저 추가해주세요!')
   }
 }
 
@@ -302,8 +302,9 @@ const handleCreateLesson = async () => {
 }
 </script>
 
+
 <template>
-  <div class="relative bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 pb-24">
+  <div class="relative bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 pb-24 sm:mr-[130px]">
     
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <h2 class="text-xl font-extrabold text-gray-800">{{ currentYear }}년 {{ currentMonth }}월 수업 관리</h2>
@@ -313,7 +314,7 @@ const handleCreateLesson = async () => {
       </div>
     </div>
 
-    <div class="grid grid-cols-7 gap-1 text-center font-bold text-gray-400 mb-2 text-xs">
+    <div class="grid grid-cols-7 gap-1 pr-14 sm:pr-0 text-center font-bold text-gray-400 mb-2 text-xs">
       <div v-for="day in days" :key="day" :class="day === '일' ? 'text-red-400' : day === '토' ? 'text-blue-400' : ''">
         {{ day }}
       </div>
@@ -325,7 +326,7 @@ const handleCreateLesson = async () => {
         :key="index"
         @mouseenter="hoveredWeekIndex = index"
         @mouseleave="hoveredWeekIndex = null"
-        class="relative group grid grid-cols-7 gap-1 p-1 -mx-1 rounded-xl transition-all duration-200"
+        class="relative group grid grid-cols-7 gap-1 p-1 -mx-1 rounded-xl transition-all duration-200 pr-14 sm:pr-0"
         :class="{
           'bg-purple-50/60 ring-1 ring-purple-100': !clipboard.type && hoveredWeekIndex === index
         }"
@@ -338,8 +339,8 @@ const handleCreateLesson = async () => {
           @click="pasteWeeks(hoveredWeekIndex !== null ? hoveredWeekIndex : index)"
           class="absolute inset-0 z-10 bg-purple-100/90 border-2 border-dashed border-purple-500 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-all"
         >
-          <span v-if="index === hoveredWeekIndex" class="text-purple-700 font-extrabold text-sm shadow-md bg-white px-5 py-2 rounded-full animate-bounce-short">
-            여기에 {{ clipboard.type === 'two-weeks' ? '2주치' : '1주치' }} 스케줄 붙여넣기
+          <span v-if="index === hoveredWeekIndex" class="text-purple-700 font-extrabold text-xs sm:text-sm shadow-md bg-white px-4 py-2 rounded-full animate-bounce-short">
+            여기에 {{ clipboard.type === 'two-weeks' ? '2주치' : '1주치' }} 붙여넣기
           </span>
         </div>
 
@@ -347,13 +348,25 @@ const handleCreateLesson = async () => {
           <button 
             @click="handleDayClick(dayObj)"
             :class="[
-              'w-10 h-10 flex items-center justify-center rounded-full font-bold text-sm transition-all relative cursor-pointer',
+              'w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full font-bold text-xs sm:text-sm transition-all relative cursor-pointer',
               selectedDate === dayObj.fullDate ? 'bg-blue-600 text-white shadow-md z-0' : 
               (dayObj.type === 'current' ? 'bg-transparent text-gray-700 hover:bg-blue-50' : 
               'text-gray-300 font-medium hover:bg-gray-100')
             ]"
           >
             {{ dayObj.date }}
+          </button>
+        </div>
+
+        <div 
+          v-if="!clipboard.type" 
+          class="absolute right-1 top-1/2 transform -translate-y-1/2 flex sm:hidden flex-col gap-1 z-20"
+        >
+          <button @click="copyWeek(index)" class="px-1.5 py-1 bg-green-500 text-white text-[9px] font-black rounded shadow active:scale-95 transition">
+            1주
+          </button>
+          <button @click="copyTwoWeeks(index)" class="px-1.5 py-1 bg-blue-500 text-white text-[9px] font-black rounded shadow active:scale-95 transition">
+            2주
           </button>
         </div>
 
@@ -413,12 +426,12 @@ const handleCreateLesson = async () => {
     </div>
   </div>
 
-  <div v-if="clipboard.type" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] bg-gray-900/95 backdrop-blur shadow-2xl rounded-full px-6 py-3 flex items-center space-x-4 animate-fade-in-up">
-    <div class="text-white text-sm font-medium whitespace-nowrap">
+  <div v-if="clipboard.type" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] bg-gray-900/95 backdrop-blur shadow-2xl rounded-full px-6 py-3 flex items-center space-x-4 animate-fade-in-up w-[90%] sm:w-auto justify-between sm:justify-start">
+    <div class="text-white text-xs sm:text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
       <span class="text-purple-300 font-bold mr-1">📋 {{ clipboard.label }}</span> 복사됨
     </div>
-    <div class="w-px h-4 bg-gray-600"></div>
-    <button @click="clearClipboard" class="text-gray-400 hover:text-white text-sm font-bold transition">취소</button>
+    <div class="w-px h-4 bg-gray-600 hidden sm:block"></div>
+    <button @click="clearClipboard" class="text-gray-400 hover:text-white text-xs sm:text-sm font-bold transition">취소</button>
   </div>
 
   <div v-if="isCreateModalOpen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
