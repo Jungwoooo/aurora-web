@@ -81,6 +81,28 @@ export const useAdminStore = defineStore('admin', () => {
     return response
   }
 
+  // 수업 복붙
+  const copyCreateLessons = async (reqList: any[]) => {
+    try {
+      const response = await useCallApi('/api/admin/lesson/copy-create', {
+        method: 'POST',
+        body: reqList
+      })
+      return true
+    } catch (error) {
+      console.error('🚨 대량 등록 실패:', error)
+      return false
+    }
+  }
+
+  // 📅 [신규 추가] 달력용 특정 기간(시작일~종료일) 수업 목록 조회
+  const fetchLessonsInRange = async (startDate: string, endDate: string) => {
+    const response = await useCallApi(`/api/admin/lesson/month?startDate=${startDate}&endDate=${endDate}`, {
+      method: 'GET'
+    })
+    return response
+  }
+
   // 💡 밖에서 쓸 수 있게 전부 return 해줍니다!
   return {
     memberList,
@@ -93,5 +115,7 @@ export const useAdminStore = defineStore('admin', () => {
     fetchDailySchedule,
     updateLesson,
     deleteLesson,
+    copyCreateLessons,
+    fetchLessonsInRange
   }
 })
