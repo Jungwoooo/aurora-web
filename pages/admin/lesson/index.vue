@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue' // 💡 watch 추가!
+import { ref, computed, watch } from 'vue'
 import { useLessonStore } from '@/stores/lesson'
 import { useAdminStore } from '@/stores/admin'
 import { useToastStore } from '@/stores/toast'
@@ -42,7 +42,7 @@ const nextMonth = () => {
 
 const days = ['일', '월', '화', '수', '목', '금', '토']
 
-// 🚀 스마트 줄바꿈 캘린더 배열 계산 (무조건 7등분 그리드)
+// 스마트 줄바꿈 캘린더 배열 계산
 const calendarWeeks = computed(() => {
   const year = currentYear.value
   const month = currentMonth.value
@@ -92,12 +92,11 @@ const handleDayClick = (dayObj: any) => {
 // ==========================================
 // 📡 2. 진짜 백엔드 데이터 불러오기 (API 연동)
 // ==========================================
-const realClasses = ref<any[]>([]) // 💡 가짜 데이터 치우고 실제 DB 데이터를 담습니다!
+const realClasses = ref<any[]>([])
 
 const fetchLessons = async () => {
   if (!calendarWeeks.value || calendarWeeks.value.length === 0) return
 
-  // 💡 달력 그리드의 맨 첫 칸(좌측 상단)과 맨 마지막 칸(우측 하단) 날짜 자동 계산!
   const startDate = calendarWeeks.value[0][0].fullDate
   const endDate = calendarWeeks.value[calendarWeeks.value.length - 1][6].fullDate
 
@@ -105,12 +104,11 @@ const fetchLessons = async () => {
     const data: any = await adminStore.fetchLessonsInRange(startDate, endDate)
     realClasses.value = data
   } catch (error) {
-    console.error('🚨 수업 목록 조회 실패:', error)
+    console.error('수업 목록 조회 실패:', error)
     toastStore.show('수업 목록을 불러오는 데 실패했습니다.')
   }
 }
 
-// 💡 [마법의 와처] 달력이 켜지거나 달(Month)이 바뀔 때마다 백엔드에서 42일치 데이터를 새로 땡겨옵니다!
 watch(calendarWeeks, () => {
   fetchLessons()
 }, { immediate: true })
@@ -120,12 +118,13 @@ watch(calendarWeeks, () => {
 // 📋 3. 복사/붙여넣기 (클립보드) 로직
 // ==========================================
 const clipboard = ref<{
-  type: 'single' | 'week' | 'two-weeks' | null,
+  type: 'single' | 'day' | 'week' | 'two-weeks' | null,
   label: string,
   data: any
 }>({ type: null, label: '', data: null })
 
-const hoveredWeekIndex = ref<number | null>(null)
+const isCopyOptionModalOpen = ref(false)
+const isPasteConfirmModalOpen = ref(false)
 
 const shiftDateTime = (dateTimeStr: string, daysToAdd: number) => {
   const d = new Date(dateTimeStr)
@@ -148,104 +147,194 @@ const getLessonsInRange = (startDate: string, endDate: string) => {
   })
 }
 
-const copyWeek = (index: number) => {
-  const week = calendarWeeks.value[index]
-  const sourceStartDate = week[0].fullDate
-  const sourceEndDate = week[6].fullDate
+// 현재 선택된 날짜가 포함된 주(Week)의 정보 가져오기
+const getWeekInfoOfSelectedDate = () => {
+  const weekIndex = calendarWeeks.value.findIndex(week => 
+    week.some(day => day.fullDate === selectedDate.value)
+  )
+  if (weekIndex === -1) return null
   
-  const targetLessons = getLessonsInRange(sourceStartDate, sourceEndDate)
-  if (targetLessons.length === 0) return toastStore.show('이 주(Week)에는 복사할 수업이 없습니다.')
-
-  clipboard.value = { 
-    type: 'week', 
-    label: `${sourceStartDate} 주간`, 
-    data: { sourceStartDate, lessons: targetLessons } 
+  const week = calendarWeeks.value[weekIndex]
+  return {
+    index: weekIndex,
+    startDate: week[0].fullDate,
+    endDate: week[6].fullDate,
+    week
   }
-  toastStore.show(`${targetLessons.length}개의 수업이 복사되었습니다.`)
-}
-
-const copyTwoWeeks = (index: number) => {
-  const week1 = calendarWeeks.value[index]
-  const week2 = calendarWeeks.value[index + 1]
-  if (!week2) return toastStore.show('마지막 주에서는 2주 복사를 할 수 없습니다.')
-
-  const sourceStartDate = week1[0].fullDate
-  const sourceEndDate = week2[6].fullDate
-  const targetLessons = getLessonsInRange(sourceStartDate, sourceEndDate)
-
-  if (targetLessons.length === 0) return toastStore.show('복사할 수업이 없습니다.')
-
-  clipboard.value = { 
-    type: 'two-weeks', 
-    label: `2주간 (${sourceStartDate} ~)`, 
-    data: { sourceStartDate, lessons: targetLessons } 
-  }
-  toastStore.show(`${targetLessons.length}개의 수업이 복사되었습니다.`)
-}
-
-const copySingle = (cls: any) => {
-  clipboard.value = { type: 'single', label: `'${cls.title}' 수업`, data: cls }
-  toastStore.show('수업이 복사되었습니다.')
 }
 
 const clearClipboard = () => {
   clipboard.value = { type: null, label: '', data: null }
 }
 
-const pasteWeeks = async (targetIndex: number) => {
-  if (clipboard.value.type === 'two-weeks' && targetIndex === calendarWeeks.value.length - 1) {
-    return toastStore.show('마지막 주에는 2주치를 붙여넣을 공간이 부족합니다.')
-  }
-
-  const sourceStartDate = clipboard.value.data.sourceStartDate
-  const targetStartDate = calendarWeeks.value[targetIndex][0].fullDate
-  const diffDays = Math.round((new Date(targetStartDate).getTime() - new Date(sourceStartDate).getTime()) / (1000 * 60 * 60 * 24))
-
-  const payload = clipboard.value.data.lessons.map((lesson: any) => ({
-    title: lesson.title,
-    instructor: lesson.instructor,
-    capacity: lesson.capacity,
-    startTime: shiftDateTime(lesson.startTime, diffDays),
-    endTime: shiftDateTime(lesson.endTime, diffDays)
-  }))
-
-  if (adminStore.copyCreateLessons) {
-    const success = await adminStore.copyCreateLessons(payload)
-    if (success) {
-      toastStore.show(`✨ 성공! ${payload.length}개의 수업이 복사되었습니다.`)
-      clearClipboard()
-      await fetchLessons() // 🚀 복사 후 화면 데이터 즉시 자동 갱신!
-    } else {
-      toastStore.show('수업 대량 등록에 실패했습니다.')
+// [스케줄 복사 버튼 클릭] - 하루, 1주, 2주 복사 처리
+const handleCopyOption = (option: 'day' | 'week' | 'two-weeks') => {
+  isCopyOptionModalOpen.value = false
+  
+  if (option === 'day') {
+    const lessons = getLessonsInRange(selectedDate.value, selectedDate.value)
+    if (lessons.length === 0) return toastStore.show('이 날짜에는 복사할 수업이 없습니다.')
+    
+    clipboard.value = {
+      type: 'day',
+      label: `${selectedDate.value} (하루)`,
+      data: { sourceStartDate: selectedDate.value, lessons }
     }
-  } else {
-    toastStore.show('adminStore에 copyCreateLessons 함수를 먼저 추가해주세요!')
+    toastStore.show(`${lessons.length}개의 하루 수업 스케줄이 복사되었습니다.`)
+  } 
+  else if (option === 'week') {
+    const weekInfo = getWeekInfoOfSelectedDate()
+    if (!weekInfo) return
+    
+    const lessons = getLessonsInRange(weekInfo.startDate, weekInfo.endDate)
+    if (lessons.length === 0) return toastStore.show('이 주간에는 복사할 수업이 없습니다.')
+    
+    clipboard.value = {
+      type: 'week',
+      label: `${weekInfo.startDate} 주간`,
+      data: { sourceStartDate: weekInfo.startDate, lessons }
+    }
+    toastStore.show(`${lessons.length}개의 1주치 수업 스케줄이 복사되었습니다.`)
+  } 
+  else if (option === 'two-weeks') {
+    const weekInfo = getWeekInfoOfSelectedDate()
+    if (!weekInfo) return
+    
+    const nextWeek = calendarWeeks.value[weekInfo.index + 1]
+    if (!nextWeek) return toastStore.show('마지막 주에서는 2주 복사를 할 수 없습니다.')
+    
+    const endDate = nextWeek[6].fullDate
+    const lessons = getLessonsInRange(weekInfo.startDate, endDate)
+    if (lessons.length === 0) return toastStore.show('복사할 수업이 없습니다.')
+    
+    clipboard.value = {
+      type: 'two-weeks',
+      label: `${weekInfo.startDate} ~ 2주간`,
+      data: { sourceStartDate: weekInfo.startDate, lessons }
+    }
+    toastStore.show(`${lessons.length}개의 2주치 수업 스케줄이 복사되었습니다.`)
   }
 }
 
-const pasteSingle = async () => {
-  const sourceDate = clipboard.value.data.startTime.split('T')[0]
-  const targetDate = selectedDate.value
-  const diffDays = Math.round((new Date(targetDate).getTime() - new Date(sourceDate).getTime()) / (1000 * 60 * 60 * 24))
+// 개별 단건 수업 복사
+const copySingle = (cls: any) => {
+  clipboard.value = { type: 'single', label: `'${cls.title}' 단건 수업`, data: cls }
+  toastStore.show('단건 수업이 복사되었습니다.')
+}
 
-  const payload = {
-    title: clipboard.value.data.title,
-    instructor: clipboard.value.data.instructor,
-    capacity: clipboard.value.data.capacity,
-    startTime: shiftDateTime(clipboard.value.data.startTime, diffDays),
-    endTime: shiftDateTime(clipboard.value.data.endTime, diffDays)
+// 붙여넣기 정보 요약 계산기 (확인 모달용)
+const pasteDetails = computed(() => {
+  if (!clipboard.value.type || !clipboard.value.data) return null
+
+  const count = clipboard.value.type === 'single' ? 1 : clipboard.value.data.lessons.length
+  let sourceInfo = ''
+  let targetInfo = ''
+
+  if (clipboard.value.type === 'single') {
+    sourceInfo = clipboard.value.data.startTime.split('T')[0]
+    targetInfo = selectedDate.value
+  } else if (clipboard.value.type === 'day') {
+    sourceInfo = clipboard.value.data.sourceStartDate
+    targetInfo = selectedDate.value
+  } else {
+    // 1주 / 2주 복사
+    sourceInfo = `${clipboard.value.data.sourceStartDate} 시작 주간`
+    const targetWeekInfo = getWeekInfoOfSelectedDate()
+    targetInfo = targetWeekInfo ? `${targetWeekInfo.startDate} 시작 주간` : selectedDate.value
   }
 
-  const success = await adminStore.createLesson(payload)
-  if (success) {
-    toastStore.show(`✨ 성공! 수업이 ${targetDate}일에 추가되었습니다.`)
-    clearClipboard()
-    await fetchLessons() // 🚀 복사 후 화면 데이터 즉시 자동 갱신!
+  return { count, sourceInfo, targetInfo }
+})
+
+// 진짜 붙여넣기 실행 로직
+const executePaste = async () => {
+  if (!clipboard.value.type) return
+  isPasteConfirmModalOpen.value = false
+
+  // 1. 단건 수업 붙여넣기
+  if (clipboard.value.type === 'single') {
+    const sourceDate = clipboard.value.data.startTime.split('T')[0]
+    const targetDate = selectedDate.value
+    const diffDays = Math.round((new Date(targetDate).getTime() - new Date(sourceDate).getTime()) / (1000 * 60 * 60 * 24))
+
+    const payload = {
+      title: clipboard.value.data.title,
+      instructor: clipboard.value.data.instructor,
+      capacity: clipboard.value.data.capacity,
+      startTime: shiftDateTime(clipboard.value.data.startTime, diffDays),
+      endTime: shiftDateTime(clipboard.value.data.endTime, diffDays)
+    }
+
+    const success = await adminStore.createLesson(payload)
+    if (success) {
+      toastStore.show(`성공! 수업이 ${targetDate}일에 복사되었습니다.`)
+      clearClipboard()
+      await fetchLessons()
+    }
+  } 
+  // 2. 하루 스케줄 통째로 붙여넣기
+  else if (clipboard.value.type === 'day') {
+    const sourceDate = clipboard.value.data.sourceStartDate
+    const targetDate = selectedDate.value
+    const diffDays = Math.round((new Date(targetDate).getTime() - new Date(sourceDate).getTime()) / (1000 * 60 * 60 * 24))
+
+    const payload = clipboard.value.data.lessons.map((lesson: any) => ({
+      title: lesson.title,
+      instructor: lesson.instructor,
+      capacity: lesson.capacity,
+      startTime: shiftDateTime(lesson.startTime, diffDays),
+      endTime: shiftDateTime(lesson.endTime, diffDays)
+    }))
+
+    if (adminStore.copyCreateLessons) {
+      const success = await adminStore.copyCreateLessons(payload)
+      if (success) {
+        toastStore.show(`성공! ${payload.length}개의 수업이 복사되었습니다.`)
+        clearClipboard()
+        await fetchLessons()
+      } else {
+        toastStore.show('수업 대량 등록에 실패했습니다.')
+      }
+    }
+  } 
+  // 3. 1주 / 2주 스케줄 대량 붙여넣기
+  else {
+    const targetWeekInfo = getWeekInfoOfSelectedDate()
+    if (!targetWeekInfo) return toastStore.show('선택된 날짜의 주간 정보를 찾을 수 없습니다.')
+
+    if (clipboard.value.type === 'two-weeks' && targetWeekInfo.index === calendarWeeks.value.length - 1) {
+      return toastStore.show('마지막 주에는 2주치를 붙여넣을 공간이 부족합니다.')
+    }
+
+    const sourceStartDate = clipboard.value.data.sourceStartDate
+    const targetStartDate = targetWeekInfo.startDate
+    const diffDays = Math.round((new Date(targetStartDate).getTime() - new Date(sourceStartDate).getTime()) / (1000 * 60 * 60 * 24))
+
+    const payload = clipboard.value.data.lessons.map((lesson: any) => ({
+      title: lesson.title,
+      instructor: lesson.instructor,
+      capacity: lesson.capacity,
+      startTime: shiftDateTime(lesson.startTime, diffDays),
+      endTime: shiftDateTime(lesson.endTime, diffDays)
+    }))
+
+    if (adminStore.copyCreateLessons) {
+      const success = await adminStore.copyCreateLessons(payload)
+      if (success) {
+        toastStore.show(`✨ 성공! ${payload.length}개의 수업이 복사되었습니다.`)
+        clearClipboard()
+        await fetchLessons()
+      } else {
+        toastStore.show('수업 대량 등록에 실패했습니다.')
+      }
+    } else {
+      toastStore.show('adminStore에 copyCreateLessons 함수를 추가해 주세요!')
+    }
   }
 }
 
 // ==========================================
-// 📝 4. 단건 수업 개설 모달 (Modal) 상태
+// 📝 4. 단건 수업 개설 모달 상태
 // ==========================================
 const isCreateModalOpen = ref(false)
 
@@ -294,7 +383,7 @@ const handleCreateLesson = async () => {
     if (success) {
       toastStore.show('수업이 성공적으로 개설되었습니다!')
       closeCreateModal() 
-      await fetchLessons() // 🚀 개설 후 화면 데이터 즉시 자동 갱신!
+      await fetchLessons()
     }
   } catch (error) {
     toastStore.show('수업 개설에 실패했습니다.')
@@ -302,53 +391,44 @@ const handleCreateLesson = async () => {
 }
 </script>
 
-
 <template>
-  <div class="relative bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 pb-24 sm:mr-[130px]">
+  <div class="relative bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 pb-24">
     
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-      <h2 class="text-xl font-extrabold text-gray-800">{{ currentYear }}년 {{ currentMonth }}월 수업 관리</h2>
-      <div class="flex space-x-2">
-        <button @click="prevMonth" class="p-2 bg-gray-50 rounded-lg hover:bg-gray-200 transition">⬅️</button>
-        <button @click="nextMonth" class="p-2 bg-gray-50 rounded-lg hover:bg-gray-200 transition">➡️</button>
-      </div>
+    <div class="flex items-center justify-center mb-8 gap-6">
+      <button @click="prevMonth" class="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all active:scale-95">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      
+      <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight select-none">
+        {{ currentYear }}.{{ String(currentMonth).padStart(2, '0') }}
+      </h2>
+      
+      <button @click="nextMonth" class="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all active:scale-95">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
     </div>
 
-    <div class="grid grid-cols-7 gap-1 pr-14 sm:pr-0 text-center font-bold text-gray-400 mb-2 text-xs">
+    <div class="grid grid-cols-7 gap-1 text-center font-bold text-gray-400 mb-2 text-xs">
       <div v-for="day in days" :key="day" :class="day === '일' ? 'text-red-400' : day === '토' ? 'text-blue-400' : ''">
         {{ day }}
       </div>
     </div>
 
-    <div class="flex flex-col gap-1 mb-8 relative">
+    <div class="flex flex-col gap-1 mb-8">
       <div 
         v-for="(week, index) in calendarWeeks" 
         :key="index"
-        @mouseenter="hoveredWeekIndex = index"
-        @mouseleave="hoveredWeekIndex = null"
-        class="relative group grid grid-cols-7 gap-1 p-1 -mx-1 rounded-xl transition-all duration-200 pr-14 sm:pr-0"
-        :class="{
-          'bg-purple-50/60 ring-1 ring-purple-100': !clipboard.type && hoveredWeekIndex === index
-        }"
+        class="grid grid-cols-7 gap-1 p-1 rounded-xl transition-all duration-200"
       >
-        <div 
-          v-if="
-            (clipboard.type === 'week' && hoveredWeekIndex === index) ||
-            (clipboard.type === 'two-weeks' && hoveredWeekIndex !== null && (index === hoveredWeekIndex || index === hoveredWeekIndex + 1))
-          "
-          @click="pasteWeeks(hoveredWeekIndex !== null ? hoveredWeekIndex : index)"
-          class="absolute inset-0 z-10 bg-purple-100/90 border-2 border-dashed border-purple-500 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-all"
-        >
-          <span v-if="index === hoveredWeekIndex" class="text-purple-700 font-extrabold text-xs sm:text-sm shadow-md bg-white px-4 py-2 rounded-full animate-bounce-short">
-            여기에 {{ clipboard.type === 'two-weeks' ? '2주치' : '1주치' }} 붙여넣기
-          </span>
-        </div>
-
         <div v-for="dayObj in week" :key="dayObj.fullDate" class="flex justify-center items-center py-1">
           <button 
             @click="handleDayClick(dayObj)"
             :class="[
-              'w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full font-bold text-xs sm:text-sm transition-all relative cursor-pointer',
+              'w-10 h-10 flex items-center justify-center rounded-full font-bold text-sm transition-all relative cursor-pointer',
               selectedDate === dayObj.fullDate ? 'bg-blue-600 text-white shadow-md z-0' : 
               (dayObj.type === 'current' ? 'bg-transparent text-gray-700 hover:bg-blue-50' : 
               'text-gray-300 font-medium hover:bg-gray-100')
@@ -357,48 +437,36 @@ const handleCreateLesson = async () => {
             {{ dayObj.date }}
           </button>
         </div>
-
-        <div 
-          v-if="!clipboard.type" 
-          class="absolute right-1 top-1/2 transform -translate-y-1/2 flex sm:hidden flex-col gap-1 z-20"
-        >
-          <button @click="copyWeek(index)" class="px-1.5 py-1 bg-green-500 text-white text-[9px] font-black rounded shadow active:scale-95 transition">
-            1주
-          </button>
-          <button @click="copyTwoWeeks(index)" class="px-1.5 py-1 bg-blue-500 text-white text-[9px] font-black rounded shadow active:scale-95 transition">
-            2주
-          </button>
-        </div>
-
-        <div 
-          v-if="!clipboard.type" 
-          class="absolute -right-[120px] top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex space-x-1.5 z-20"
-        >
-          <button @click="copyWeek(index)" class="px-2.5 py-1.5 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold rounded-lg hover:bg-green-50 hover:text-green-700 hover:border-green-200 shadow-sm transition whitespace-nowrap">
-            1주 복사
-          </button>
-          <button @click="copyTwoWeeks(index)" class="px-2.5 py-1.5 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold rounded-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 shadow-sm transition whitespace-nowrap">
-            2주 복사
-          </button>
-        </div>
       </div>
     </div>
 
     <div class="border-t pt-6">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h3 class="text-lg font-bold text-gray-800">{{ displaySelectedDate }} 등록된 수업</h3>
         
-        <button 
-          @click="openCreateModal" 
-          class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-gray-800 transition flex items-center gap-1"
-        >
-          <span class="text-lg leading-none">+</span> 수업 추가
-        </button>
-      </div>
-      
-      <div v-if="clipboard.type === 'single'" class="mb-4 p-4 rounded-xl border-2 border-dashed border-purple-400 bg-purple-50 flex justify-between items-center">
-        <div class="text-sm font-bold text-purple-800">📍 현재 선택된 날짜에 붙여넣기 할까요?</div>
-        <button @click="pasteSingle" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-purple-700 transition">여기에 붙여넣기</button>
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <button 
+            v-if="clipboard.type"
+            @click="isPasteConfirmModalOpen = true" 
+            class="flex-1 sm:flex-none px-4 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-purple-700 transition flex items-center justify-center gap-1.5 active:scale-95"
+          >
+            붙여넣기
+          </button>
+          
+          <button 
+            @click="isCopyOptionModalOpen = true" 
+            class="flex-1 sm:flex-none px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition flex items-center justify-center gap-1.5 active:scale-95"
+          >
+            복사
+          </button>
+          
+          <button 
+            @click="openCreateModal" 
+            class="flex-1 sm:flex-none px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition flex items-center justify-center gap-1 active:scale-95"
+          >
+            <span class="text-lg leading-none"></span>추가
+          </button>
+        </div>
       </div>
 
       <div class="space-y-3">
@@ -428,65 +496,122 @@ const handleCreateLesson = async () => {
 
   <div v-if="clipboard.type" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] bg-gray-900/95 backdrop-blur shadow-2xl rounded-full px-6 py-3 flex items-center space-x-4 animate-fade-in-up w-[90%] sm:w-auto justify-between sm:justify-start">
     <div class="text-white text-xs sm:text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-      <span class="text-purple-300 font-bold mr-1">📋 {{ clipboard.label }}</span> 복사됨
+      <span class="text-purple-300 font-bold mr-1">{{ clipboard.label }}</span> 복사됨
     </div>
     <div class="w-px h-4 bg-gray-600 hidden sm:block"></div>
     <button @click="clearClipboard" class="text-gray-400 hover:text-white text-xs sm:text-sm font-bold transition">취소</button>
   </div>
 
-  <div v-if="isCreateModalOpen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all animate-slide-up">
-      <div class="flex justify-between items-center p-5 md:p-6 border-b border-gray-100">
-        <div>
-          <h2 class="text-xl font-extrabold text-gray-800">새 수업 개설</h2>
-          <p class="text-gray-500 text-sm mt-1">스케줄표에 올라갈 수업을 만들어주세요.</p>
+  <BaseModal :isOpen="isCopyOptionModalOpen" title="수업 스케줄 복사" @close="isCopyOptionModalOpen = false">
+    <p class="text-gray-500 text-xs mb-5">현재 선택된 날짜(<span class="text-blue-600 font-extrabold">{{ displaySelectedDate }}</span>)를 기준으로 복사할 범위를 선택하세요.</p>
+    
+    <div class="space-y-3">
+      <button @click="handleCopyOption('day')" class="w-full p-4 text-left border border-gray-100 rounded-2xl hover:border-purple-300 hover:bg-purple-50/30 transition group">
+        <div class="font-extrabold text-sm text-gray-800 group-hover:text-purple-700 flex items-center justify-between">
+          <span>하루 복사</span>
+          <!-- <span class="text-xs font-normal text-gray-400">Today only</span> -->
         </div>
-        <button @click="closeCreateModal" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <p class="text-xs text-gray-400 mt-1">이 날짜에 개설된 모든 수업들을 복사합니다.</p>
+      </button>
+
+      <button @click="handleCopyOption('week')" class="w-full p-4 text-left border border-gray-100 rounded-2xl hover:border-purple-300 hover:bg-purple-50/30 transition group">
+        <div class="font-extrabold text-sm text-gray-800 group-hover:text-purple-700 flex items-center justify-between">
+          <span>1주 복사</span>
+          <!-- <span class="text-xs font-normal text-gray-400">1 Week</span> -->
+        </div>
+        <p class="text-xs text-gray-400 mt-1">선택된 날짜가 포함된 한 주간의 모든 수업들을 복사합니다.</p>
+      </button>
+
+      <button @click="handleCopyOption('two-weeks')" class="w-full p-4 text-left border border-gray-100 rounded-2xl hover:border-purple-300 hover:bg-purple-50/30 transition group">
+        <div class="font-extrabold text-sm text-gray-800 group-hover:text-purple-700 flex items-center justify-between">
+          <span>2주 복사</span>
+          <!-- <span class="text-xs font-normal text-gray-400">2 Weeks</span> -->
+        </div>
+        <p class="text-xs text-gray-400 mt-1">선택된 날짜가 포함된 주부터 2주간의 수업을 통째로 복사합니다.</p>
+      </button>
+    </div>
+  </BaseModal>
+
+  <BaseModal :isOpen="isPasteConfirmModalOpen" title="스케줄 붙여넣기 확인" @close="isPasteConfirmModalOpen = false">
+    <div v-if="pasteDetails" class="space-y-4">
+      <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center space-x-3">
+        <!-- <span class="text-2xl"></span> -->
+        <div>
+          <h4 class="text-purple-900 font-extrabold text-sm">스케줄 일괄 생성</h4>
+          <p class="text-purple-700 text-xs mt-0.5">선택한 일정 기반으로 수업을 일괄 복사합니다.</p>
+        </div>
+      </div>
+
+      <div class="space-y-2 border border-gray-100 rounded-2xl p-4 bg-gray-50/50">
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500 font-medium">대상 수업 개수</span>
+          <span class="text-gray-900 font-extrabold">{{ pasteDetails.count }}개 수업</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500 font-medium">복사 원본 정보</span>
+          <span class="text-gray-900 font-bold">{{ pasteDetails.sourceInfo }}</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500 font-medium">붙여넣어질 대상</span>
+          <span class="text-blue-600 font-extrabold">➔ {{ pasteDetails.targetInfo }}</span>
+        </div>
+      </div>
+
+      <p class="text-xs text-red-400 text-center">※ 기존 일정이 있는 경우 겹칠 수 있으니 타겟 일자를 꼭 확인해 주세요!</p>
+
+      <div class="pt-2 flex space-x-2">
+        <button type="button" @click="isPasteConfirmModalOpen = false" class="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition">
+          취소
+        </button>
+        <button type="button" @click="executePaste" class="flex-1 py-3 bg-purple-600 text-white font-bold rounded-xl shadow-md hover:bg-purple-700 transition text-sm">
+          확인 및 복사 실행
         </button>
       </div>
-      
-      <div class="p-5 md:p-6">
-        <form @submit.prevent="handleCreateLesson" class="space-y-4">
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">수업명 (난이도)</label>
-            <input v-model="title" type="text" placeholder="예: 입문반 (폴린이 환영)" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition" />
-          </div>
-
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">강사명</label>
-            <input v-model="instructor" type="text" placeholder="예: 오로라" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition" />
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">날짜</label>
-              <input v-model="formDate" type="date" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition" />
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">시작 시간</label>
-              <input v-model="startTime" type="text" placeholder="1900" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition font-bold" />
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">종료 시간</label>
-              <input v-model="endTime" type="text" placeholder="2000" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition font-bold" />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">정원 (명)</label>
-            <input v-model="capacity" type="number" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition" />
-          </div>
-
-          <div class="pt-2">
-            <button type="submit" class="w-full bg-purple-600 text-white font-bold text-lg py-3.5 rounded-xl shadow-md hover:bg-purple-700 active:scale-[0.98] transition-transform">
-              스케줄에 올리기!
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
-  </div>
+  </BaseModal>
+
+  <BaseModal :isOpen="isCreateModalOpen" title="새 수업 개설" @close="closeCreateModal">
+    <form @submit.prevent="handleCreateLesson" class="space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1">수업명 (난이도)</label>
+        <input v-model="title" type="text" placeholder="예: 입문반 (폴린이 환영)" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition text-sm" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1">강사명</label>
+        <input v-model="instructor" type="text" placeholder="예: 오로라" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition text-sm" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">날짜</label>
+          <input v-model="formDate" type="date" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">시작 시간</label>
+          <input v-model="startTime" type="text" placeholder="1900" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition font-bold text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">종료 시간</label>
+          <input v-model="endTime" type="text" placeholder="2000" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition font-bold text-sm" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1">정원 (명)</label>
+        <input v-model="capacity" type="number" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition text-sm" />
+      </div>
+
+      <div class="pt-4 flex space-x-2">
+        <button type="button" @click="closeCreateModal" class="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition">
+          취소
+        </button>
+        <button type="submit" class="flex-1 py-3 bg-purple-600 text-white font-bold rounded-xl shadow-md hover:bg-purple-700 transition text-sm">
+          스케줄에 올리기
+        </button>
+      </div>
+    </form>
+  </BaseModal>
 </template>
 
 <style scoped>
@@ -500,17 +625,5 @@ const handleCreateLesson = async () => {
 @keyframes bounce-short {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
-}
-
-.animate-fade-in { animation: fadeIn 0.2s ease-out; }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 </style>

@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useLessonStore } from '@/stores/lesson'
 import { useAdminStore } from '@/stores/admin'
 import { useToastStore } from '@/stores/toast' 
+import { useMemberStore } from '@/stores/member' // 💡 (참고) 코드에 없어서 임포트 추가해두었습니다!
 
 definePageMeta({ layout: 'admin' })
 
@@ -93,20 +94,34 @@ const handleDelete = async (lessonId: number) => {
   />
 
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-extrabold text-gray-800">{{ currentYear }}년 {{ currentMonth }}월 수업 관리</h2>
-      <div class="flex space-x-2">
-        <button @click="prevMonth" class="p-2 bg-gray-50 rounded-lg hover:bg-gray-200">⬅️</button>
-        <button @click="nextMonth" class="p-2 bg-gray-50 rounded-lg hover:bg-gray-200">➡️</button>
-      </div>
+    
+    <!-- ✨ 교체된 캘린더 헤더 (중앙 정렬 & 심플 화살표) -->
+    <div class="flex items-center justify-center mb-8 gap-6">
+      <button @click="prevMonth" class="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all active:scale-95">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      
+      <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight select-none">
+        {{ currentYear }}.{{ String(currentMonth).padStart(2, '0') }}
+      </h2>
+      
+      <button @click="nextMonth" class="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all active:scale-95">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
     </div>
 
+    <!-- 요일 영역 -->
     <div class="grid grid-cols-7 gap-1 text-center font-bold text-gray-400 mb-2 text-xs">
       <div v-for="day in days" :key="day" :class="day === '일' ? 'text-red-400' : day === '토' ? 'text-blue-400' : ''">
         {{ day }}
       </div>
     </div>
 
+    <!-- 날짜 영역 -->
     <div class="grid grid-cols-7 gap-1 text-center">
       <div v-for="(blank, index) in blankDays" :key="'blank-'+index"></div>
       
@@ -125,6 +140,7 @@ const handleDelete = async (lessonId: number) => {
       </button>
     </div>
 
+    <!-- 하단 리스트 영역 -->
     <div class="mt-8 border-t pt-6">
       <h3 class="text-lg font-bold text-gray-800 mb-4">{{ currentMonth }}월 {{ selectedDate }}일 등록된 수업</h3>
       

@@ -14,7 +14,7 @@ export const useToastStore = defineStore('toast', () => {
     // 💡 3초 뒤에 스르륵 알아서 사라지는 마법!
     setTimeout(() => {
       isVisible.value = false
-    }, 3000) 
+    }, 1000) 
   }
 
   return { isVisible, message, type, show }

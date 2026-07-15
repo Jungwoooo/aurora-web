@@ -3,13 +3,16 @@ import { ref, computed, watch } from 'vue'
 import { useMemberStore } from '@/stores/member'
 import { useReservationStore } from '@/stores/reservation'
 import { useLessonStore } from '@/stores/lesson'
+import { useToastStore } from '@/stores/toast' // 💡 누락되었던 토스트 스토어 임포트 추가!
 
 const memberStore = useMemberStore()
 const reservationStore = useReservationStore()
 const lessonStore = useLessonStore()
 const toastStore = useToastStore()
 
+// ==========================================
 // 📅 1. 원장님이 만드셨던 실제 달력 로직
+// ==========================================
 const currentDate = ref(new Date()) 
 const selectedDate = ref(currentDate.value.getDate())
 
@@ -36,7 +39,9 @@ const days = ['일', '월', '화', '수', '목', '금', '토']
 const realClasses = ref<any>([])
 const myReservations = ref<any>([]) // 💡 내가 예약한 내역 보관용!
 
+// ==========================================
 // 🚀 2. 백엔드에서 날짜별 수업 + 내 예약 정보 가져오기
+// ==========================================
 const fetchData = async () => {
   const year = currentYear.value
   const month = String(currentMonth.value).padStart(2, '0')
@@ -59,7 +64,9 @@ const fetchData = async () => {
 // 💡 날짜가 바뀔 때마다 무조건 다시 불러오기!
 watch([selectedDate, currentMonth], fetchData, { immediate: true })
 
+// ==========================================
 // 🚨 3. 상태 체크 로직 (과거인가? 이미 예약했나?)
+// ==========================================
 // 1) 이미 예약한 수업인지 확인
 const isAlreadyBooked = (lessonId: number) => {
   return myReservations.value.some((res: any) => res.lessonId === lessonId)
@@ -75,7 +82,9 @@ const isPastLesson = (startTime: string) => {
   return lessonDateTime < new Date() // 현재 시간보다 과거면 true!
 }
 
+// ==========================================
 // 🚀 4. 진짜 예약 로직
+// ==========================================
 const handleBooking = async (lessonId: number) => {
   const myMemberId = memberStore.userInfo?.id
   if (!myMemberId) return toastStore.show('로그인 먼저 해주세요!')
@@ -99,12 +108,22 @@ const handleBooking = async (lessonId: number) => {
 <template>
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
     
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-extrabold text-gray-800">{{ currentYear }}년 {{ currentMonth }}월</h2>
-      <div class="flex space-x-2">
-        <button @click="prevMonth" class="p-2 bg-gray-50 rounded-lg hover:bg-gray-200">⬅️</button>
-        <button @click="nextMonth" class="p-2 bg-gray-50 rounded-lg hover:bg-gray-200">➡️</button>
-      </div>
+    <div class="flex items-center justify-center mb-8 gap-6">
+      <button @click="prevMonth" class="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all active:scale-95">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      
+      <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight select-none">
+        {{ currentYear }}.{{ String(currentMonth).padStart(2, '0') }}
+      </h2>
+      
+      <button @click="nextMonth" class="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all active:scale-95">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
     </div>
 
     <div class="grid grid-cols-7 gap-1 text-center font-bold text-gray-400 mb-2 text-xs">
